@@ -5,10 +5,25 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Document;
 use Illuminate\Support\Facades\Storage;
-use Carbon\Carbon;
 
 class DocumentController extends Controller
 {
+    // List jenis & departemen
+    private $types = [
+        'sop', 'wi', 'form', 'internal memo', 'skm', 'manual book', 'opl'
+    ];
+
+    private $departments = [
+        'PRODUKSI',
+        'HRGA',
+        'PPIC',
+        'WAREHOUSE',
+        'QUALITY AND DEVELOPMENT',
+        'FINANCE',
+        'PURCHASING',
+        'SALES AND MARKETING',
+    ];
+
     public function index(Request $request)
     {
         $query = Document::query();
@@ -36,16 +51,17 @@ class DocumentController extends Controller
 
     public function create()
     {
-        $types = ['sop', 'wi', 'form', 'internal memo', 'skm', 'manual book', 'opl'];
-        return view('documents.create', compact('types'));
+        $types = $this->types;
+        $departments = $this->departments;
+        return view('documents.create', compact('types', 'departments'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'document_number' => 'required|string|max:255',
-            'type' => 'required|in:sop,wi,form,internal memo,skm,manual book,opl',
-            'department' => 'required|string|max:255',
+            'type' => 'required|in:' . implode(',', $this->types),
+            'department' => 'required|in:' . implode(',', $this->departments),
             'document_date' => 'required|date',
             'name' => 'required|string|max:255',
             'file' => 'required|file|mimes:pdf,doc,docx|max:10240',
@@ -58,8 +74,8 @@ class DocumentController extends Controller
             'document_number' => $request->document_number,
             'department' => $request->department,
             'document_date' => $request->document_date,
-            'name' => $request->name, // Nama dokumen asli
-            'type' => $request->type, // Jenis dokumen
+            'name' => $request->name,
+            'type' => $request->type,
             'file_path' => $path,
             'status' => $request->status,
         ]);
@@ -67,52 +83,53 @@ class DocumentController extends Controller
         return redirect()->route('documents.index')->with('success', 'Dokumen berhasil ditambahkan');
     }
 
-   public function dashboard()
-{
-    $jenisList = ['sop', 'wi', 'form', 'internal memo', 'skm', 'manual book', 'opl'];
+    public function dashboard()
+    {
+        $jenisList = $this->types;
 
-    // Ambil semua departemen unik
-    $departments = \App\Models\Document::select('department')->distinct()->pluck('department');
+        // Ambil semua departemen unik
+        $departments = \App\Models\Document::select('department')->distinct()->pluck('department');
 
-    // Siapkan struktur statistik per departemen & jenis
-    $departmentStats = [];
-    foreach ($departments as $dept) {
-        $departmentStats[$dept] = [
-            'total' => \App\Models\Document::where('department', $dept)->count(),
-            'berlaku' => \App\Models\Document::where('department', $dept)->where('status', 'berlaku')->count(),
-            'tidak_berlaku' => \App\Models\Document::where('department', $dept)->where('status', 'tidak_berlaku')->count(),
-        ];
-        foreach ($jenisList as $jenis) {
-            $departmentStats[$dept][$jenis] = \App\Models\Document::where('department', $dept)->where('type', $jenis)->count();
+        // Siapkan struktur statistik per departemen & jenis
+        $departmentStats = [];
+        foreach ($departments as $dept) {
+            $departmentStats[$dept] = [
+                'total' => \App\Models\Document::where('department', $dept)->count(),
+                'berlaku' => \App\Models\Document::where('department', $dept)->where('status', 'berlaku')->count(),
+                'tidak_berlaku' => \App\Models\Document::where('department', $dept)->where('status', 'tidak_berlaku')->count(),
+            ];
+            foreach ($jenisList as $jenis) {
+                $departmentStats[$dept][$jenis] = \App\Models\Document::where('department', $dept)->where('type', $jenis)->count();
+            }
         }
+
+        // Statistik keseluruhan
+        $totalDocument = \App\Models\Document::count();
+        $totalBerlaku = \App\Models\Document::where('status', 'berlaku')->count();
+        $totalTidakBerlaku = \App\Models\Document::where('status', 'tidak_berlaku')->count();
+
+        // Statistik per jenis dokumen keseluruhan (seluruh departemen)
+        $jenisStats = [];
+        foreach ($jenisList as $jenis) {
+            $jenisStats[$jenis] = \App\Models\Document::where('type', $jenis)->count();
+        }
+
+        return view('dashboard', [
+            'departmentStats' => $departmentStats,
+            'jenisList' => $jenisList,
+            'totalDocument' => $totalDocument,
+            'totalBerlaku' => $totalBerlaku,
+            'totalTidakBerlaku' => $totalTidakBerlaku,
+            'jenisStats' => $jenisStats,
+        ]);
     }
-
-    // Statistik keseluruhan
-    $totalDocument = \App\Models\Document::count();
-    $totalBerlaku = \App\Models\Document::where('status', 'berlaku')->count();
-    $totalTidakBerlaku = \App\Models\Document::where('status', 'tidak_berlaku')->count();
-
-    // Statistik per jenis dokumen keseluruhan (seluruh departemen)
-    $jenisStats = [];
-    foreach ($jenisList as $jenis) {
-        $jenisStats[$jenis] = \App\Models\Document::where('type', $jenis)->count();
-    }
-
-    return view('dashboard', [
-        'departmentStats' => $departmentStats,
-        'jenisList' => $jenisList,
-        'totalDocument' => $totalDocument,
-        'totalBerlaku' => $totalBerlaku,
-        'totalTidakBerlaku' => $totalTidakBerlaku,
-        'jenisStats' => $jenisStats,
-    ]);
-}
 
     public function edit($id)
     {
         $document = Document::findOrFail($id);
-        $types = ['sop', 'wi', 'form', 'internal memo', 'skm', 'manual book', 'opl'];
-        return view('documents.edit', compact('document', 'types'));
+        $types = $this->types;
+        $departments = $this->departments;
+        return view('documents.edit', compact('document', 'types', 'departments'));
     }
 
     public function update(Request $request, $id)
@@ -121,8 +138,8 @@ class DocumentController extends Controller
 
         $request->validate([
             'document_number' => 'required|string|max:255',
-            'type' => 'required|in:sop,wi,form,internal memo,skm,manual book,opl',
-            'department' => 'required|string|max:255',
+            'type' => 'required|in:' . implode(',', $this->types),
+            'department' => 'required|in:' . implode(',', $this->departments),
             'document_date' => 'required|date',
             'name' => 'required|string|max:255',
             'file' => 'nullable|file|mimes:pdf,doc,docx|max:10240',

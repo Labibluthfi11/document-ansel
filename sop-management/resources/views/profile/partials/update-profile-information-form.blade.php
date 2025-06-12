@@ -17,23 +17,7 @@
         @csrf
         @method('patch')
 
-        {{-- Foto Profil --}}
-        <div>
-            <x-input-label for="photo" :value="__('Foto Profil')" />
-
-            @if ($user->profile_photo_path)
-                <div class="mt-2">
-                    <img src="{{ asset('storage/profile-photos/'.$user->profile_photo_path) }}" alt="Foto Profil"
-                        class="w-24 h-24 rounded-full object-cover">
-                </div>
-            @endif
-
-            <x-text-input id="photo" name="photo" type="file" class="mt-2 block w-full"
-                accept="image/png, image/jpeg, image/jpg" />
-
-            <x-input-error class="mt-2" :messages="$errors->get('photo')" />
-            <p class="text-xs text-gray-500 mt-1">Format: JPG, JPEG, PNG. Maksimal 2MB.</p>
-        </div>
+        
 
         {{-- Nama --}}
         <div>

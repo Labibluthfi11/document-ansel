@@ -77,10 +77,15 @@
                     <label for="department" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Departemen <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" name="department" id="department" required
-                           value="{{ old('department') }}"
-                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                           placeholder="Contoh: Keuangan, HR, Produksi">
+                    <select name="department" id="department" required
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="">Pilih Departemen...</option>
+                        @foreach($departments as $dept)
+                            <option value="{{ $dept }}" {{ old('department') == $dept ? 'selected' : '' }}>
+                                {{ $dept }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
 
                 {{-- Nama Dokumen --}}

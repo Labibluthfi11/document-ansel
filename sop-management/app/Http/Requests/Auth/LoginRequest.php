@@ -41,6 +41,14 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
+        // --- CEK DOMAIN EMAIL HARUS @gmail.com ---
+        if (!Str::endsWith($this->email, '@gmail.com')) {
+            throw ValidationException::withMessages([
+                'email' => 'Login hanya diperbolehkan menggunakan email @gmail.com.',
+            ]);
+        }
+        // --- END CEK DOMAIN EMAIL ---
+
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
