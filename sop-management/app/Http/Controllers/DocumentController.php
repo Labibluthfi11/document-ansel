@@ -25,30 +25,30 @@ class DocumentController extends Controller
     ];
 
     public function index(Request $request)
-    {
-        $query = Document::query();
+{
+    $query = Document::query();
 
-        if ($request->filled('department')) {
-            $query->where('department', 'like', '%' . $request->department . '%');
-        }
-        if ($request->filled('document_number')) {
-            $query->where('document_number', 'like', '%' . $request->document_number . '%');
-        }
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-        if ($request->filled('document_date')) {
-            $query->where('document_date', $request->document_date);
-        }
-
-        $documents = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
-
-        return view('documents.index', compact('documents'));
+    if ($request->filled('department')) {
+        $query->where('department', 'like', '%' . $request->department . '%');
+    }
+    if ($request->filled('document_number')) {
+        $query->where('document_number', 'like', '%' . $request->document_number . '%');
+    }
+    if ($request->filled('type')) {
+        $query->where('type', $request->type);
+    }
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+    if ($request->filled('document_date')) {
+        $query->where('document_date', $request->document_date);
     }
 
+    // Urutkan A-Z berdasarkan department
+    $documents = $query->orderBy('department', 'asc')->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+
+    return view('documents.index', compact('documents'));
+}
     public function create()
     {
         $types = $this->types;
@@ -102,6 +102,9 @@ class DocumentController extends Controller
                 $departmentStats[$dept][$jenis] = \App\Models\Document::where('department', $dept)->where('type', $jenis)->count();
             }
         }
+
+        // *** SORT dari A-Z ***
+        ksort($departmentStats);
 
         // Statistik keseluruhan
         $totalDocument = \App\Models\Document::count();

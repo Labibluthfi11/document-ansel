@@ -101,6 +101,9 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @php
+                                    ksort($departmentStats);
+                                @endphp
                                 @foreach($departmentStats as $dept => $stat)
                                     <tr class="hover:bg-gray-50 transition">
                                         <td class="py-2 px-4 font-semibold text-gray-800 border-b bg-gray-50">{{ $dept }}</td>
