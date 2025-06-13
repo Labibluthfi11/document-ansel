@@ -25,7 +25,5 @@ RUN apt-get update && apt-get install -y \
 COPY --from=vendor /app /app
 COPY --from=build /app/public /app/public
 
-EXPOSE 8000
-
-# Perintah untuk run server Laravel
-CMD php artisan serve --host=0.0.0.0 --port=8000
+EXPOSE 8080
+CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
