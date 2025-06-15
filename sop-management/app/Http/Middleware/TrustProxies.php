@@ -13,10 +13,5 @@ class TrustProxies extends Middleware
      */
     protected $proxies = '*';
 
-    /**
-     * The headers that should be used to detect proxies.
-     *
-     * @var int|null
-     */
-    protected $headers = \Illuminate\Http\Middleware\TrustProxies::HEADERS_ALL;
+    // TIDAK PERLU LAGI PROPERTY $headers
 }
