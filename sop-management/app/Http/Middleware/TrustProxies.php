@@ -18,5 +18,5 @@ class TrustProxies extends Middleware
      *
      * @var int|null
      */
-    protected $headers = self::HEADERS_ALL;
+    protected $headers = \Illuminate\Http\Middleware\TrustProxies::HEADERS_ALL;
 }
