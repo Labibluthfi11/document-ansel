@@ -56,4 +56,5 @@ Route::post('/logout', function () {
 })->name('logout');
 
 // Auth routes Breeze (login, register, forgot password, dll)
+
 require __DIR__.'/auth.php';
