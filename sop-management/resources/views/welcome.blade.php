@@ -23,6 +23,11 @@
                     </a>
                 </div>
             </div>
+            {{-- Optional: Hero Image --}}
+            <div class="md:w-1/2 w-full flex justify-center md:justify-end mb-10 md:mb-0">
+               
+            </div>
+        </section>
 
         {{-- Footer --}}
         <footer class="bg-white text-center text-gray-500 py-6 text-sm border-t">

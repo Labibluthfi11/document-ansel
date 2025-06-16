@@ -7,6 +7,9 @@
                 <div>
                     <h3 class="text-xl md:text-3xl font-bold mb-1">Selamat Datang, {{ auth()->user()->name }}!</h3>
                     <p class="text-base md:text-lg">Login sebagai <span class="font-bold">{{ auth()->user()->role }}</span></p>
+                </div>
+                
+            </div>
 
             {{-- Info Cards --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
