@@ -23,12 +23,6 @@
                     </a>
                 </div>
             </div>
-            {{-- Optional: Hero Image --}}
-            <div class="md:w-1/2 w-full flex justify-center md:justify-end mb-10 md:mb-0">
-                <img src="https://www.svgrepo.com/show/452091/office-archive.svg"
-                    alt="Document Hero" class="w-44 sm:w-60 md:w-80 drop-shadow-xl opacity-90">
-            </div>
-        </section>
 
         {{-- Footer --}}
         <footer class="bg-white text-center text-gray-500 py-6 text-sm border-t">
