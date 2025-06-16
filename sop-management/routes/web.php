@@ -3,8 +3,10 @@
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\SocialiteController;
 use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 // Landing Page
 Route::get('/', function () {
@@ -42,12 +44,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/admin/user/{id}/send-reset-password', [AdminUserController::class, 'sendResetPassword'])->name('admin.sendResetPassword');
         Route::post('/admin/users/{id}/make-admin', [AdminUserController::class, 'makeAdmin'])->name('admin.users.makeAdmin');
         Route::post('/admin/users/{id}/make-user', [AdminUserController::class, 'makeUser'])->name('admin.users.makeUser');
-        Route::delete('/admin/users/{id}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy'); // <-- Tambah route hapus user
+        Route::delete('/admin/users/{id}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
     });
 });
 
 // Logout (jaga-jaga jika tidak pakai Breeze)
-use Illuminate\Support\Facades\Auth;
 Route::post('/logout', function () {
     Auth::logout();
     request()->session()->invalidate();
@@ -55,8 +56,9 @@ Route::post('/logout', function () {
     return redirect('/');
 })->name('logout');
 
+// Socialite routes untuk Google & GitHub login
+Route::get('/auth/{provider}/redirect', [SocialiteController::class, 'redirect'])->name('auth.redirect');
+Route::get('/auth/{provider}/callback', [SocialiteController::class, 'callback'])->name('auth.callback');
+
 // Auth routes Breeze (login, register, forgot password, dll)
-
 require __DIR__.'/auth.php';
-
-
