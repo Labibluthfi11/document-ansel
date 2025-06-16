@@ -59,11 +59,4 @@ Route::post('/logout', function () {
 
 require __DIR__.'/auth.php';
 
-Route::get('/db-check', function () {
-    try {
-        \DB::connection()->getPdo();
-        return 'Database Connected: ' . \DB::connection()->getDatabaseName();
-    } catch (\Exception $e) {
-        return 'Database Error: ' . $e->getMessage();
-    }
-});
+
