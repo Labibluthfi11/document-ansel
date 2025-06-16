@@ -58,3 +58,12 @@ Route::post('/logout', function () {
 // Auth routes Breeze (login, register, forgot password, dll)
 
 require __DIR__.'/auth.php';
+
+Route::get('/db-check', function () {
+    try {
+        \DB::connection()->getPdo();
+        return 'Database Connected: ' . \DB::connection()->getDatabaseName();
+    } catch (\Exception $e) {
+        return 'Database Error: ' . $e->getMessage();
+    }
+});
