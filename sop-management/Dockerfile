@@ -4,16 +4,17 @@ WORKDIR /app
 
 COPY . .
 
+# Copy file nginx config khusus untuk override ukuran upload
+COPY uploads.conf /etc/nginx/conf.d/uploads.conf
+
 RUN composer install --no-dev --optimize-autoloader \
     && npm install \
     && npm run build
 
-# Override konfigurasi nginx biar client_max_body_size kebaca
-COPY .docker/nginx.conf /opt/docker/etc/nginx/conf.d/99-custom.conf
-
-ENV WEB_DOCUMENT_ROOT=/app/public \
-    PHP_MEMORY_LIMIT=512M \
-    PHP_UPLOAD_MAX_FILESIZE=50M \
-    PHP_POST_MAX_SIZE=50M
+# Environment PHP dan konfigurasi lainnya
+ENV WEB_DOCUMENT_ROOT=/app/public
+ENV PHP_MEMORY_LIMIT=512M
+ENV PHP_UPLOAD_MAX_FILESIZE=50M
+ENV PHP_POST_MAX_SIZE=50M
 
 EXPOSE 80
