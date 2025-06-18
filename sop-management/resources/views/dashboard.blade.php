@@ -8,7 +8,6 @@
                     <h3 class="text-xl md:text-3xl font-bold mb-1">Selamat Datang, {{ auth()->user()->name }}!</h3>
                     <p class="text-base md:text-lg">Login sebagai <span class="font-bold">{{ auth()->user()->role }}</span></p>
                 </div>
-                
             </div>
 
             {{-- Info Cards --}}
@@ -50,6 +49,11 @@
                     <a href="{{ route('admin.users.index') }}"
                        class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-3 bg-purple-600 text-white rounded-xl font-semibold shadow hover:bg-purple-700 transition text-sm md:text-base">
                         👥 <span class="ml-2">Manajemen User</span>
+                    </a>
+                    {{-- TOMBOL ACTIVITY LOG (hanya admin) --}}
+                    <a href="{{ route('admin.activity-log') }}"
+                       class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-3 bg-yellow-600 text-white rounded-xl font-semibold shadow hover:bg-yellow-700 transition text-sm md:text-base">
+                        📝 <span class="ml-2">Log Aktivitas</span>
                     </a>
                 @endif
             </div>

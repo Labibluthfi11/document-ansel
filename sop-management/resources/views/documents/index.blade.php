@@ -18,6 +18,12 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                {{ session('error') }}
+            </div>
+        @endif
+
         <!-- Filter -->
         <form method="GET" class="flex flex-wrap gap-2 mb-4 overflow-x-auto">
             <input type="text" name="department" placeholder="Cari Departemen" value="{{ request('department') }}" class="rounded-lg border-gray-300 p-2 text-xs sm:text-base min-w-[120px]">
@@ -74,7 +80,8 @@
                             </td>
                             <td class="px-3 py-2 flex gap-2 flex-wrap">
                                 @if($doc->status == 'berlaku')
-                                    <a href="{{ route('documents.download', $doc->id) }}" class="bg-amber-500 hover:bg-amber-600 text-brown-900 px-3 py-1 rounded-md text-xs font-bold shadow-sm border border-amber-700">📥 Download</a>
+                                    <a href="{{ route('documents.preview', $doc->id) }}" class="bg-blue-100 hover:bg-blue-200 text-blue-900 px-3 py-1 rounded-md text-xs font-bold border border-blue-300">👁️ Lihat</a>
+                                    <a href="{{ asset($doc->file_path) }}" class="bg-amber-500 hover:bg-amber-600 text-brown-900 px-3 py-1 rounded-md text-xs font-bold shadow-sm border border-amber-700" target="_blank" download>📥 Download</a>
                                 @endif
 
                                 @if(auth()->user()->role == 'admin')
@@ -115,7 +122,8 @@
                     </div>
                     <div class="flex flex-wrap gap-2">
                         @if($doc->status == 'berlaku')
-                            <a href="{{ route('documents.download', $doc->id) }}" class="bg-amber-500 hover:bg-amber-600 text-brown-900 px-3 py-1 rounded-md text-xs font-bold shadow-sm border border-amber-700">📥 Download</a>
+                            <a href="{{ route('documents.preview', $doc->id) }}" class="bg-blue-100 hover:bg-blue-200 text-blue-900 px-3 py-1 rounded-md text-xs font-bold border border-blue-300">👁️ Lihat</a>
+                            <a href="{{ asset($doc->file_path) }}" class="bg-amber-500 hover:bg-amber-600 text-brown-900 px-3 py-1 rounded-md text-xs font-bold shadow-sm border border-amber-700" target="_blank" download>📥 Download</a>
                         @endif
 
                         @if(auth()->user()->role == 'admin')

@@ -26,9 +26,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Dokumen (lihat & download)
+    // Dokumen (lihat & download & preview)
     Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
     Route::get('/documents/download/{id}', [DocumentController::class, 'download'])->name('documents.download');
+    Route::get('/documents/preview/{id}', [DocumentController::class, 'preview'])->name('documents.preview');
+    Route::get('/documents/stream/{id}', [DocumentController::class, 'stream'])->name('documents.stream');
 
     // Group khusus admin
     Route::middleware([AdminMiddleware::class])->group(function () {
@@ -45,10 +47,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/admin/users/{id}/make-admin', [AdminUserController::class, 'makeAdmin'])->name('admin.users.makeAdmin');
         Route::post('/admin/users/{id}/make-user', [AdminUserController::class, 'makeUser'])->name('admin.users.makeUser');
         Route::delete('/admin/users/{id}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
+
+        // Activity Log (admin)
+        Route::get('/admin/activity-log', [AdminUserController::class, 'activityLog'])->name('admin.activity-log');
     });
 });
 
-// Logout (jaga-jaga jika tidak pakai Breeze)
+// Logout
 Route::post('/logout', function () {
     Auth::logout();
     request()->session()->invalidate();
