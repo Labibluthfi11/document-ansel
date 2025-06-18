@@ -77,10 +77,10 @@ class DocumentController extends Controller
             'status' => 'required|in:berlaku,tidak_berlaku',
         ]);
 
-        // SIMPAN FILE KE public/documents
+        // SIMPAN FILE KE public/uploads
         $filename = uniqid() . '_' . $request->file('file')->getClientOriginalName();
-        $request->file('file')->move(public_path('documents'), $filename);
-        $path = 'documents/' . $filename;
+        $request->file('file')->move(public_path('uploads'), $filename);
+        $path = 'uploads/' . $filename;
 
         $doc = Document::create([
             'document_number' => $request->document_number,
@@ -176,13 +176,13 @@ class DocumentController extends Controller
         ]);
 
         if ($request->hasFile('file')) {
-            // Hapus file lama dari public/documents
+            // Hapus file lama dari public/uploads
             if (file_exists(public_path($document->file_path))) {
                 unlink(public_path($document->file_path));
             }
             $filename = uniqid() . '_' . $request->file('file')->getClientOriginalName();
-            $request->file('file')->move(public_path('documents'), $filename);
-            $document->file_path = 'documents/' . $filename;
+            $request->file('file')->move(public_path('uploads'), $filename);
+            $document->file_path = 'uploads/' . $filename;
         }
 
         $document->update([
@@ -221,7 +221,7 @@ class DocumentController extends Controller
             'ip_address' => request()->ip(),
         ]);
 
-        // Download file langsung dari public/documents
+        // Download file langsung dari public/uploads
         $filePath = public_path($doc->file_path);
         if (!file_exists($filePath)) {
             abort(404, 'File tidak ditemukan');
@@ -236,7 +236,7 @@ class DocumentController extends Controller
         }
         $document = Document::findOrFail($id);
 
-        // Hapus file dari public/documents
+        // Hapus file dari public/uploads
         if (file_exists(public_path($document->file_path))) {
             unlink(public_path($document->file_path));
         }
