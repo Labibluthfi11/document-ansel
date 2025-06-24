@@ -19,6 +19,7 @@ class DocumentController extends Controller
         'QUALITY AND DEVELOPMENT', 'FINANCE', 'PURCHASING', 'SALES AND MARKETING',
     ];
 
+    // Index Page with filtering and pagination
     public function index(Request $request)
     {
         $query = Document::query();
@@ -41,6 +42,7 @@ class DocumentController extends Controller
 
         $documents = $query->orderBy('department', 'asc')->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
 
+        // Log activity
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'view_index',
@@ -51,6 +53,7 @@ class DocumentController extends Controller
         return view('documents.index', compact('documents'));
     }
 
+    // Create document form for Admin
     public function create()
     {
         if (!auth()->user() || auth()->user()->role !== 'admin') {
@@ -61,6 +64,7 @@ class DocumentController extends Controller
         return view('documents.create', compact('types', 'departments'));
     }
 
+    // Store the new document
     public function store(Request $request)
     {
         if (!auth()->user() || auth()->user()->role !== 'admin') {
@@ -77,7 +81,7 @@ class DocumentController extends Controller
             'status' => 'required|in:berlaku,tidak_berlaku',
         ]);
 
-        // SIMPAN FILE KE public/uploads
+        // Save file
         $filename = uniqid() . '_' . $request->file('file')->getClientOriginalName();
         $request->file('file')->move(public_path('uploads'), $filename);
         $path = 'uploads/' . $filename;
@@ -92,6 +96,7 @@ class DocumentController extends Controller
             'status' => $request->status,
         ]);
 
+        // Log activity
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'create',
@@ -103,6 +108,7 @@ class DocumentController extends Controller
         return redirect()->route('documents.index')->with('success', 'Dokumen berhasil ditambahkan');
     }
 
+    // Dashboard for document statistics
     public function dashboard()
     {
         $jenisList = $this->types;
@@ -130,6 +136,7 @@ class DocumentController extends Controller
             $jenisStats[$jenis] = Document::where('type', $jenis)->count();
         }
 
+        // Log activity
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'view_dashboard',
@@ -147,6 +154,7 @@ class DocumentController extends Controller
         ]);
     }
 
+    // Edit document form for Admin
     public function edit($id)
     {
         if (!auth()->user() || auth()->user()->role !== 'admin') {
@@ -158,6 +166,7 @@ class DocumentController extends Controller
         return view('documents.edit', compact('document', 'types', 'departments'));
     }
 
+    // Update document after editing
     public function update(Request $request, $id)
     {
         if (!auth()->user() || auth()->user()->role !== 'admin') {
@@ -175,8 +184,9 @@ class DocumentController extends Controller
             'status' => 'required|in:berlaku,tidak_berlaku',
         ]);
 
+        // File upload handling
         if ($request->hasFile('file')) {
-            // Hapus file lama dari public/uploads
+            // Delete the old file
             if (file_exists(public_path($document->file_path))) {
                 unlink(public_path($document->file_path));
             }
@@ -194,6 +204,7 @@ class DocumentController extends Controller
             'status' => $request->status,
         ]);
 
+        // Log activity
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'update',
@@ -205,6 +216,7 @@ class DocumentController extends Controller
         return redirect()->route('documents.index')->with('success', 'Dokumen berhasil diperbarui');
     }
 
+    // Download document
     public function download($id)
     {
         $doc = Document::findOrFail($id);
@@ -213,6 +225,7 @@ class DocumentController extends Controller
             abort(403, 'Dokumen tidak berlaku tidak bisa diunduh');
         }
 
+        // Log activity
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'download',
@@ -221,7 +234,7 @@ class DocumentController extends Controller
             'ip_address' => request()->ip(),
         ]);
 
-        // Download file langsung dari public/uploads
+        // Download file directly from public/uploads
         $filePath = public_path($doc->file_path);
         if (!file_exists($filePath)) {
             abort(404, 'File tidak ditemukan');
@@ -229,6 +242,7 @@ class DocumentController extends Controller
         return response()->download($filePath, $doc->name . '.' . pathinfo($filePath, PATHINFO_EXTENSION));
     }
 
+    // Delete document
     public function destroy($id)
     {
         if (!auth()->user() || auth()->user()->role !== 'admin') {
@@ -236,11 +250,12 @@ class DocumentController extends Controller
         }
         $document = Document::findOrFail($id);
 
-        // Hapus file dari public/uploads
+        // Delete file from public/uploads
         if (file_exists(public_path($document->file_path))) {
             unlink(public_path($document->file_path));
         }
 
+        // Log activity
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'delete',
@@ -254,6 +269,7 @@ class DocumentController extends Controller
         return redirect()->route('documents.index')->with('success', 'Dokumen berhasil dihapus');
     }
 
+    // Preview document (only for PDFs)
     public function preview($id)
     {
         $doc = Document::findOrFail($id);
@@ -262,6 +278,7 @@ class DocumentController extends Controller
             abort(403, 'Dokumen tidak berlaku tidak bisa dilihat');
         }
 
+        // Log activity
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'preview',
@@ -278,6 +295,7 @@ class DocumentController extends Controller
         return view('documents.preview', compact('doc'));
     }
 
+    // Stream document (only for PDFs)
     public function stream($id)
     {
         $doc = Document::findOrFail($id);
@@ -286,6 +304,7 @@ class DocumentController extends Controller
             abort(403, 'Dokumen tidak berlaku tidak bisa diakses');
         }
 
+        // Log activity
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'stream',
@@ -301,7 +320,7 @@ class DocumentController extends Controller
 
         return response()->file($filePath, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="'.$doc->name.'.pdf"',
+            'Content-Disposition' => 'inline; filename="' . $doc->name . '.pdf"',
         ]);
     }
 }

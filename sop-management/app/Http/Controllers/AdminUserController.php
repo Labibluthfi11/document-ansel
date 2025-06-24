@@ -2,22 +2,19 @@
 
 namespace App\Http\Controllers;
 
-
 use App\Models\User;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AdminUserController extends Controller
 {
-    /**
-     * Tampilkan daftar user.
-     */
     public function index()
     {
         $users = User::orderBy('created_at', 'desc')->get();
 
-        // Log aktivitas melihat daftar user (hanya admin)
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'view_user_list',
@@ -28,17 +25,65 @@ class AdminUserController extends Controller
         return view('admin.users.index', compact('users'));
     }
 
-    /**
-     * Kirimkan link reset password ke email user.
-     */
+    public function create()
+    {
+        return view('admin.users.create');
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => ['required', 'string'],
+            'email' => ['required', 'email', 'unique:users,email'],
+        ]);
+
+        $allowedEmails = [
+            'development@anselmudaberkarya.com',
+            'contact@anselmudaberkarya.com',
+            'official@anselmudaberkarya.com',
+            'hr@anselmudaberkarya.com',
+            'plantmanager@anselmudaberkarya.com',
+            'procurementppic@anselmudaberkarya.com',
+            'warehouselogistic@anselmudaberkarya.com',
+            'production@anselmudaberkarya.com',
+            'financeaccounting@anselmudaberkarya.com',
+            'rndofficer@anselmudaberkarya.com',
+        ];
+
+        if (!in_array(strtolower($request->email), $allowedEmails)) {
+            return back()->withErrors(['email' => 'Email tidak diizinkan.']);
+        }
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => strtolower($request->email),
+            'password' => Hash::make(Str::random(12)),
+            'role' => 'user'
+        ]);
+
+        $status = Password::sendResetLink(['email' => $user->email]);
+
+        ActivityLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'create_user',
+            'description' => "Menambahkan user baru: {$user->email}",
+            'ip_address' => request()->ip(),
+        ]);
+
+        if ($status === Password::RESET_LINK_SENT) {
+            return redirect()->route('admin.users.index')
+                ->with('success', 'User berhasil dibuat dan link reset password telah dikirim.');
+        }
+
+        return redirect()->route('admin.users.index')
+            ->with('warning', 'User berhasil dibuat, tapi gagal mengirim email reset password.');
+    }
+
     public function sendResetPassword($id)
     {
         $user = User::findOrFail($id);
-
-        // Kirim link reset ke email user
         $status = Password::sendResetLink(['email' => $user->email]);
 
-        // Log aktivitas kirim reset password
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'send_reset_password',
@@ -47,15 +92,12 @@ class AdminUserController extends Controller
         ]);
 
         if ($status === Password::RESET_LINK_SENT) {
-            return back()->with('success', 'Link reset password sudah dikirim ke email user: '.$user->email);
+            return back()->with('success', 'Link reset password sudah dikirim ke email user: ' . $user->email);
         } else {
             return back()->withErrors(['email' => 'Gagal mengirim link reset password.']);
         }
     }
 
-    /**
-     * Jadikan user menjadi admin.
-     */
     public function makeAdmin($id)
     {
         $user = User::findOrFail($id);
@@ -63,7 +105,6 @@ class AdminUserController extends Controller
             $user->role = 'admin';
             $user->save();
 
-            // Log aktivitas upgrade user jadi admin
             ActivityLog::create([
                 'user_id' => auth()->id(),
                 'action' => 'make_admin',
@@ -74,9 +115,6 @@ class AdminUserController extends Controller
         return back()->with('success', 'User berhasil dijadikan admin.');
     }
 
-    /**
-     * Turunkan admin jadi user biasa.
-     */
     public function makeUser($id)
     {
         $user = User::findOrFail($id);
@@ -84,7 +122,6 @@ class AdminUserController extends Controller
             $user->role = 'user';
             $user->save();
 
-            // Log aktivitas downgrade admin jadi user
             ActivityLog::create([
                 'user_id' => auth()->id(),
                 'action' => 'make_user',
@@ -95,19 +132,14 @@ class AdminUserController extends Controller
         return back()->with('success', 'Role user berhasil diubah menjadi user.');
     }
 
-    /**
-     * Hapus user (admin tidak bisa hapus dirinya sendiri).
-     */
     public function destroy($id)
     {
         $user = User::findOrFail($id);
 
-        // Tidak boleh hapus diri sendiri
         if ($user->id == auth()->id()) {
             return back()->withErrors(['error' => 'Kamu tidak bisa menghapus akun sendiri!']);
         }
 
-        // Log aktivitas hapus user
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'delete_user',
@@ -120,16 +152,30 @@ class AdminUserController extends Controller
         return back()->with('success', 'User berhasil dihapus.');
     }
 
-    /**
-     * Tampilkan log aktivitas untuk admin.
-     */
     public function activityLog()
     {
         $activityLogs = ActivityLog::with('user')
             ->orderByDesc('created_at')
             ->paginate(25);
 
-        // GANTI PATH VIEW SESUAI FOLDER BARU
         return view('asu.activity-log', compact('activityLogs'));
+    }
+
+    /**
+     * Hapus semua log aktivitas (fitur baru).
+     */
+    public function purgeActivityLog()
+    {
+        ActivityLog::truncate();
+
+        ActivityLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'purge_log',
+            'description' => "Menghapus semua log aktivitas",
+            'ip_address' => request()->ip(),
+        ]);
+
+        return redirect()->route('admin.activity-log')
+            ->with('success', 'Semua log aktivitas berhasil dihapus.');
     }
 }

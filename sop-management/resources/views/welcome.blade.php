@@ -13,10 +13,7 @@
                     Akses mudah, aman, dan cepat di mana saja.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-3 sm:gap-5 mt-4">
-                    <a href="{{ route('register') }}"
-                        class="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition shadow transform hover:-translate-y-1 hover:shadow-lg text-base sm:text-lg">
-                        🚀 <span class="ml-2">Mulai Sekarang</span>
-                    </a>
+                    
                     <a href="{{ route('login') }}"
                         class="inline-flex items-center justify-center px-6 py-3 border border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition hover:border-blue-700 text-base sm:text-lg">
                         Sudah Punya Akun
@@ -25,7 +22,7 @@
             </div>
             {{-- Optional: Hero Image --}}
             <div class="md:w-1/2 w-full flex justify-center md:justify-end mb-10 md:mb-0">
-               
+
             </div>
         </section>
 

@@ -41,16 +41,23 @@
                    class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-3 bg-green-600 text-white rounded-xl font-semibold shadow hover:bg-green-700 transition text-sm md:text-base">
                     📄 <span class="ml-2">Lihat Dokumen</span>
                 </a>
+
                 @if(auth()->user()->role === 'admin')
                     <a href="{{ route('documents.create') }}"
                        class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-3 bg-blue-600 text-white rounded-xl font-semibold shadow hover:bg-blue-700 transition text-sm md:text-base">
                         📤 <span class="ml-2">Tambah Dokumen</span>
                     </a>
+
                     <a href="{{ route('admin.users.index') }}"
                        class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-3 bg-purple-600 text-white rounded-xl font-semibold shadow hover:bg-purple-700 transition text-sm md:text-base">
                         👥 <span class="ml-2">Manajemen User</span>
                     </a>
-                    {{-- TOMBOL ACTIVITY LOG (hanya admin) --}}
+
+                    <a href="{{ route('admin.users.create') }}"
+                       class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-3 bg-indigo-600 text-white rounded-xl font-semibold shadow hover:bg-indigo-700 transition text-sm md:text-base">
+                        ➕ <span class="ml-2">Tambah User</span>
+                    </a>
+
                     <a href="{{ route('admin.activity-log') }}"
                        class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-3 bg-yellow-600 text-white rounded-xl font-semibold shadow hover:bg-yellow-700 transition text-sm md:text-base">
                         📝 <span class="ml-2">Log Aktivitas</span>
