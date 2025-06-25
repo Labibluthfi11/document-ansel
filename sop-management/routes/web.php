@@ -4,21 +4,28 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\SocialiteController;
+use App\Http\Controllers\NotificationController; // ✅ Tambahan
 use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
-// Landing Page
+// ====================
+// LANDING PAGE
+// ====================
 Route::get('/', function () {
     return view('welcome');
 });
 
-// Dashboard (user biasa)
+// ====================
+// DASHBOARD
+// ====================
 Route::get('/dashboard', [DocumentController::class, 'dashboard'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-// Group routes untuk user login & verified
+// ====================
+// GROUP: HANYA UNTUK USER LOGIN & VERIFIED
+// ====================
 Route::middleware(['auth', 'verified'])->group(function () {
 
     // ====================
@@ -35,6 +42,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/documents/download/{id}', [DocumentController::class, 'download'])->name('documents.download');
     Route::get('/documents/preview/{id}', [DocumentController::class, 'preview'])->name('documents.preview');
     Route::get('/documents/stream/{id}', [DocumentController::class, 'stream'])->name('documents.stream');
+
+    // ====================
+    // NOTIFIKASI 🔔
+    // ====================
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::delete('/notifications/bulk-delete', [NotificationController::class, 'bulkDelete'])->name('notifications.bulkDelete'); // ✅ BARU
 
     // ====================
     // DOKUMEN & USER KHUSUS ADMIN

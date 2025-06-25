@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Document;
 use App\Models\ActivityLog;
+use App\Models\User;
+use App\Notifications\DocumentNotification;
 use setasign\Fpdi\Fpdi;
 use setasign\Fpdi\PdfReader\PdfReaderException;
 
@@ -19,7 +21,6 @@ class DocumentController extends Controller
         'QUALITY AND DEVELOPMENT', 'FINANCE', 'PURCHASING', 'SALES AND MARKETING',
     ];
 
-    // Index Page with filtering and pagination
     public function index(Request $request)
     {
         $query = Document::query();
@@ -42,7 +43,6 @@ class DocumentController extends Controller
 
         $documents = $query->orderBy('department', 'asc')->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
 
-        // Log activity
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'view_index',
@@ -53,7 +53,6 @@ class DocumentController extends Controller
         return view('documents.index', compact('documents'));
     }
 
-    // Create document form for Admin
     public function create()
     {
         if (!auth()->user() || auth()->user()->role !== 'admin') {
@@ -64,7 +63,6 @@ class DocumentController extends Controller
         return view('documents.create', compact('types', 'departments'));
     }
 
-    // Store the new document
     public function store(Request $request)
     {
         if (!auth()->user() || auth()->user()->role !== 'admin') {
@@ -81,7 +79,6 @@ class DocumentController extends Controller
             'status' => 'required|in:berlaku,tidak_berlaku',
         ]);
 
-        // Save file
         $filename = uniqid() . '_' . $request->file('file')->getClientOriginalName();
         $request->file('file')->move(public_path('uploads'), $filename);
         $path = 'uploads/' . $filename;
@@ -96,7 +93,6 @@ class DocumentController extends Controller
             'status' => $request->status,
         ]);
 
-        // Log activity
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'create',
@@ -105,10 +101,110 @@ class DocumentController extends Controller
             'ip_address' => request()->ip(),
         ]);
 
+        // Notifikasi
+        $users = User::where('role', '!=', 'admin')->get();
+        foreach ($users as $user) {
+            $user->notify(new DocumentNotification($doc, 'ditambahkan', auth()->user()));
+        }
+
         return redirect()->route('documents.index')->with('success', 'Dokumen berhasil ditambahkan');
     }
 
-    // Dashboard for document statistics
+    public function edit($id)
+    {
+        if (!auth()->user() || auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized');
+        }
+        $document = Document::findOrFail($id);
+        $types = $this->types;
+        $departments = $this->departments;
+        return view('documents.edit', compact('document', 'types', 'departments'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        if (!auth()->user() || auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized');
+        }
+
+        $document = Document::findOrFail($id);
+
+        $request->validate([
+            'document_number' => 'required|string|max:255',
+            'type' => 'required|in:' . implode(',', $this->types),
+            'department' => 'required|in:' . implode(',', $this->departments),
+            'document_date' => 'required|date',
+            'name' => 'required|string|max:255',
+            'file' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+            'status' => 'required|in:berlaku,tidak_berlaku',
+        ]);
+
+        if ($request->hasFile('file')) {
+            if (file_exists(public_path($document->file_path))) {
+                unlink(public_path($document->file_path));
+            }
+            $filename = uniqid() . '_' . $request->file('file')->getClientOriginalName();
+            $request->file('file')->move(public_path('uploads'), $filename);
+            $document->file_path = 'uploads/' . $filename;
+        }
+
+        $document->update([
+            'document_number' => $request->document_number,
+            'department' => $request->department,
+            'document_date' => $request->document_date,
+            'name' => $request->name,
+            'type' => $request->type,
+            'status' => $request->status,
+        ]);
+
+        ActivityLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'update',
+            'description' => "Update dokumen: {$document->name}",
+            'document_id' => $document->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        // Notifikasi
+        $users = User::where('role', '!=', 'admin')->get();
+        foreach ($users as $user) {
+            $user->notify(new DocumentNotification($document, 'diedit', auth()->user()));
+        }
+
+        return redirect()->route('documents.index')->with('success', 'Dokumen berhasil diperbarui');
+    }
+
+    public function destroy($id)
+    {
+        if (!auth()->user() || auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized');
+        }
+
+        $document = Document::findOrFail($id);
+
+        if (file_exists(public_path($document->file_path))) {
+            unlink(public_path($document->file_path));
+        }
+
+        ActivityLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'delete',
+            'description' => "Hapus dokumen: {$document->name}",
+            'document_id' => $document->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        // Notifikasi
+        $users = User::where('role', '!=', 'admin')->get();
+        foreach ($users as $user) {
+            $user->notify(new DocumentNotification($document, 'dihapus', auth()->user()));
+        }
+
+        $document->delete();
+
+        return redirect()->route('documents.index')->with('success', 'Dokumen berhasil dihapus');
+    }
+
     public function dashboard()
     {
         $jenisList = $this->types;
@@ -136,7 +232,6 @@ class DocumentController extends Controller
             $jenisStats[$jenis] = Document::where('type', $jenis)->count();
         }
 
-        // Log activity
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'view_dashboard',
@@ -154,69 +249,6 @@ class DocumentController extends Controller
         ]);
     }
 
-    // Edit document form for Admin
-    public function edit($id)
-    {
-        if (!auth()->user() || auth()->user()->role !== 'admin') {
-            abort(403, 'Unauthorized');
-        }
-        $document = Document::findOrFail($id);
-        $types = $this->types;
-        $departments = $this->departments;
-        return view('documents.edit', compact('document', 'types', 'departments'));
-    }
-
-    // Update document after editing
-    public function update(Request $request, $id)
-    {
-        if (!auth()->user() || auth()->user()->role !== 'admin') {
-            abort(403, 'Unauthorized');
-        }
-        $document = Document::findOrFail($id);
-
-        $request->validate([
-            'document_number' => 'required|string|max:255',
-            'type' => 'required|in:' . implode(',', $this->types),
-            'department' => 'required|in:' . implode(',', $this->departments),
-            'document_date' => 'required|date',
-            'name' => 'required|string|max:255',
-            'file' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
-            'status' => 'required|in:berlaku,tidak_berlaku',
-        ]);
-
-        // File upload handling
-        if ($request->hasFile('file')) {
-            // Delete the old file
-            if (file_exists(public_path($document->file_path))) {
-                unlink(public_path($document->file_path));
-            }
-            $filename = uniqid() . '_' . $request->file('file')->getClientOriginalName();
-            $request->file('file')->move(public_path('uploads'), $filename);
-            $document->file_path = 'uploads/' . $filename;
-        }
-
-        $document->update([
-            'document_number' => $request->document_number,
-            'department' => $request->department,
-            'document_date' => $request->document_date,
-            'name' => $request->name,
-            'type' => $request->type,
-            'status' => $request->status,
-        ]);
-
-        // Log activity
-        ActivityLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'update',
-            'description' => "Update dokumen: {$document->name}",
-            'document_id' => $document->id,
-            'ip_address' => request()->ip(),
-        ]);
-
-        return redirect()->route('documents.index')->with('success', 'Dokumen berhasil diperbarui');
-    }
-
-    // Download document
     public function download($id)
     {
         $doc = Document::findOrFail($id);
@@ -225,7 +257,6 @@ class DocumentController extends Controller
             abort(403, 'Dokumen tidak berlaku tidak bisa diunduh');
         }
 
-        // Log activity
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'download',
@@ -234,7 +265,6 @@ class DocumentController extends Controller
             'ip_address' => request()->ip(),
         ]);
 
-        // Download file directly from public/uploads
         $filePath = public_path($doc->file_path);
         if (!file_exists($filePath)) {
             abort(404, 'File tidak ditemukan');
@@ -242,34 +272,6 @@ class DocumentController extends Controller
         return response()->download($filePath, $doc->name . '.' . pathinfo($filePath, PATHINFO_EXTENSION));
     }
 
-    // Delete document
-    public function destroy($id)
-    {
-        if (!auth()->user() || auth()->user()->role !== 'admin') {
-            abort(403, 'Unauthorized');
-        }
-        $document = Document::findOrFail($id);
-
-        // Delete file from public/uploads
-        if (file_exists(public_path($document->file_path))) {
-            unlink(public_path($document->file_path));
-        }
-
-        // Log activity
-        ActivityLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'delete',
-            'description' => "Hapus dokumen: {$document->name}",
-            'document_id' => $document->id,
-            'ip_address' => request()->ip(),
-        ]);
-
-        $document->delete();
-
-        return redirect()->route('documents.index')->with('success', 'Dokumen berhasil dihapus');
-    }
-
-    // Preview document (only for PDFs)
     public function preview($id)
     {
         $doc = Document::findOrFail($id);
@@ -278,7 +280,6 @@ class DocumentController extends Controller
             abort(403, 'Dokumen tidak berlaku tidak bisa dilihat');
         }
 
-        // Log activity
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'preview',
@@ -295,7 +296,6 @@ class DocumentController extends Controller
         return view('documents.preview', compact('doc'));
     }
 
-    // Stream document (only for PDFs)
     public function stream($id)
     {
         $doc = Document::findOrFail($id);
@@ -304,7 +304,6 @@ class DocumentController extends Controller
             abort(403, 'Dokumen tidak berlaku tidak bisa diakses');
         }
 
-        // Log activity
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'stream',

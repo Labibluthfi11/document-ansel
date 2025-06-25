@@ -1,3 +1,8 @@
+@php
+    $unreadCount = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0;
+    $recentNotifications = auth()->check() ? auth()->user()->notifications()->latest()->take(5)->get() : collect();
+@endphp
+
 <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
@@ -23,6 +28,41 @@
             {{-- Right Profile/Action --}}
             <div class="flex items-center gap-2">
                 @auth
+                    {{-- 🔔 Notifikasi --}}
+                    <div class="relative group">
+                        <button class="relative focus:outline-none">
+                            <svg class="w-6 h-6 text-gray-600 hover:text-indigo-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                            @if($unreadCount > 0)
+                                <span class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5">{{ $unreadCount }}</span>
+                            @endif
+                        </button>
+                        {{-- Dropdown Notifikasi --}}
+                        <div class="hidden md:block absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-1 transform transition-all duration-200 z-40">
+                            <div class="p-3 text-sm font-medium text-gray-700 border-b">
+                                Notifikasi ({{ $unreadCount }} belum dibaca)
+                            </div>
+                            <div class="max-h-60 overflow-y-auto">
+                                @forelse($recentNotifications as $notif)
+                                    <a href="{{ route('notifications.index') }}"
+                                       class="block px-4 py-2 hover:bg-gray-50 text-sm text-gray-600">
+                                        <div class="font-semibold text-gray-800">{{ $notif->data['title'] ?? '-' }}</div>
+                                        <div class="text-xs text-gray-500 truncate">{{ $notif->data['body'] ?? '-' }}</div>
+                                        <div class="text-xs text-right text-gray-400 mt-1">{{ $notif->created_at->diffForHumans() }}</div>
+                                    </a>
+                                @empty
+                                    <div class="px-4 py-2 text-sm text-gray-500">Tidak ada notifikasi</div>
+                                @endforelse
+                            </div>
+                            <div class="border-t text-right">
+                                <a href="{{ route('notifications.index') }}"
+                                   class="block px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50">Lihat Semua</a>
+                            </div>
+                        </div>
+                    </div>
+
                     <span class="hidden sm:block text-base font-medium text-gray-700 truncate max-w-[120px]">{{ Auth::user()->name }}</span>
                     <div class="relative group">
                         <button class="w-10 h-10 rounded-full overflow-hidden border-2 border-indigo-500 focus:outline-none">
@@ -84,6 +124,15 @@
                     </button>
                 </form>
             @endif
+            <form action="{{ route('notifications.index') }}" method="GET">
+                <button type="submit"
+                        class="flex items-center w-full px-4 py-2 text-base text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition">
+                    Notifikasi
+                    @if($unreadCount > 0)
+                        <span class="ml-auto bg-red-600 text-white text-xs rounded-full px-2">{{ $unreadCount }}</span>
+                    @endif
+                </button>
+            </form>
             <form action="{{ route('profile.edit') }}" method="GET">
                 <button type="submit"
                         class="flex items-center w-full px-4 py-2 text-base text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition">
@@ -108,7 +157,6 @@
     btn.addEventListener('click', () => {
         menu.classList.toggle('hidden');
     });
-    // Optional: close menu when click outside
     document.addEventListener('click', function(event) {
         if (!btn.contains(event.target) && !menu.contains(event.target)) {
             menu.classList.add('hidden');
